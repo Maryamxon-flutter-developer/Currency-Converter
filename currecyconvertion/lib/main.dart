@@ -17,18 +17,17 @@ class ListScreen extends StatefulWidget {
 }
 
 class _ListScreenState extends State<ListScreen> {
+  final TextEditingController miqdorController = TextEditingController();
   List<Map<String, dynamic>> data = [];
-  dynamic nom = "";
+  double jami = 0.0;
 
   Future<void> fetchData() async {
-    final response = await http.get(Uri.parse(
-        "https://cbu.uz/uz/arkhiv-kursov-valyut/json/"));
+    final response = await http.get(Uri.parse("https://cbu.uz/uz/arkhiv-kursov-valyut/json/"));
     if (response.statusCode == 200) {
       final List<dynamic> jsonData = json.decode(response.body);
-      for (var item in jsonData) {
-        data.add(Map<String, dynamic>.from(item));
-      }
-      setState(() {});
+      setState(() {
+        data = jsonData.map((item) => Map<String, dynamic>.from(item)).toList();
+      });
     } else {
       throw Exception("Failed to load data");
     }
@@ -69,76 +68,159 @@ class _ListScreenState extends State<ListScreen> {
                         borderRadius: BorderRadius.circular(20),
                         color: Color.fromARGB(255, 248, 247, 249),
                       ),
-                    
-                    ),
-                  ),
-                );
-              },
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 232, 194, 247),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              children: [
-                               Text("${data[index]["Date"]}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
-                              ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "${data[index]["Ccy"]}",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 79, 5, 82),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                "${data[index]["Nominal"]}",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 79, 5, 82),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 20),
+                          TextField(
+                            controller: miqdorController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'Enter value',
+                              border: OutlineInputBorder(),
                             ),
                           ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 20),
-                              child: Row(  
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,                 
-                              children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 30),
-                                    child: Row(                           
-                                          children: [
-                                         Text("${data[index]["Ccy"]}",style: TextStyle(color: Color.fromARGB(255, 79, 5, 82),fontWeight: FontWeight.bold,fontSize: 16),),
-                                         Text("${data[index]["Nominal"]}",style: TextStyle(color: Color.fromARGB(255, 79, 5, 82),fontWeight: FontWeight.bold,fontSize: 16),)
-                                          ],
-                                      ),
-                                  ),
-                                    Column(
-                                    children: [
-                                           Row(
-                                           children: [
-                                             Text("${data[index]["Code"]}",style: TextStyle(color: Color.fromARGB(255, 94, 5, 73),fontWeight: FontWeight.bold,fontSize: 16),),
-                                             Text("${data[index]["CcyNm_UZ"]}",style: TextStyle(color: Color.fromARGB(255, 113, 6, 109),fontWeight: FontWeight.bold,fontSize: 16),),
-                                           ],
-                                         ),
-                                          Text("${data[index]["Rate"]}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18)),
-                                       ],
-                                     ),
-                              
-                                     Padding(
-                                       padding: const EdgeInsets.only(top: 30),
-                                       child: Text("${data[index]["Diff"]}",style: TextStyle(color: Color.fromARGB(255, 79, 5, 82),fontWeight: FontWeight.bold,fontSize: 16),),
-                                     )
-                                 
-                              ],
-                                                        ),
-                            ),
-                         
+                          SizedBox(height: 20),
+                          Text("Natija: $jami"),
+                          SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  final miqdor = double.tryParse(miqdorController.text) ?? 0;
+                                  setState(() {
+                                    jami = (double.tryParse(data[index]["Rate"]) ?? 0) * miqdor;
+                                  });
+                                  Navigator.of(context).pop();
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text("Conversion Result"),
+                                      content: Text("Natija: $jami"),
+                                    ),
+                                  );
+                                },
+                                child: Text("Convert"),
+                              ),
+                            ],
+                          )
                         ],
                       ),
                     ),
                   ),
-                
-                 
-                ],
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(255, 232, 194, 247),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            "${data[index]["Date"]}",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "${data[index]["Ccy"]}",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 79, 5, 82),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                "${data[index]["Nominal"]}",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 79, 5, 82),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "${data[index]["Code"]}",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 94, 5, 73),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                "${data[index]["CcyNm_UZ"]}",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 113, 6, 109),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                "${data[index]["Rate"]}",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "Difference: ${data[index]["Diff"]}",
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 79, 5, 82),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-             
             ),
           );
         },
@@ -146,4 +228,3 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 }
-
